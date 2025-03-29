@@ -9,6 +9,7 @@ from timeit import default_timer as timer
 import math
 import numpy as np
 from imagenet_id import indices_in_1k_a, indices_in_1k_o, indices_in_1k_r
+import struct
 
 
 def get_ckpt(path):
@@ -340,3 +341,18 @@ def load_from_old_ckpt(model, efficient, nesting_list, extract_ft=False):
 			model.fc=MultiHeadNestedLinear(nesting_list)
 
 		return model
+
+def save_fvecs(filename, vectors):
+    # Ensure that vectors are in a NumPy array with type float32
+    vectors = np.array(vectors, dtype=np.float32)
+    
+    # Get the number of vectors (N) and their dimensionality (D)
+    N, D = vectors.shape
+    
+    with open(filename, 'wb') as f:
+        # Write the number of vectors (N) and dimensionality (D) as 4-byte integers
+        f.write(struct.pack('I', N))  # N
+        f.write(struct.pack('I', D))  # D
+        
+        # Write the actual vectors (each as a series of 4-byte floats)
+        vectors.tofile(f)

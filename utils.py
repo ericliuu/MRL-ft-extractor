@@ -316,7 +316,24 @@ class MultiHeadNestedLinear(nn.Module):
 			nesting_logits +=  (getattr(self, f"nesting_classifier_{i}")(x[:, :num_feat]),)
 		return nesting_logits
 
-def load_from_old_ckpt(model, efficient, nesting_list):
+class MultiHeadFeatureExtractor(nn.Module):
+	def __init__(self, nesting_list: List, num_classes=1000, **kwargs):
+		super(MultiHeadFeatureExtractor, self).__init__()
+		self.nesting_list=nesting_list
+		self.num_classes=num_classes # Number of classes for classification
+		for i, num_feat in enumerate(self.nesting_list):
+			setattr(self, f"nesting_classifier_{i}", nn.Linear(num_feat, self.num_classes, **kwargs))
+
+	def forward(self, x):
+		nesting_logits = ()
+		for i, num_feat in enumerate(self.nesting_list):
+			nesting_logits += (x,)
+		return nesting_logits
+
+def load_from_old_ckpt(model, efficient, nesting_list, extract_ft=False):
+		if extract_ft:
+			model.fc = MultiHeadFeatureExtractor(nesting_list)
+			return model
 		if efficient:
 			model.fc=SingleHeadNestedLinear(nesting_list)
 		else:

@@ -328,7 +328,7 @@ class MultiHeadFeatureExtractor(nn.Module):
 	def forward(self, x):
 		nesting_logits = ()
 		for i, num_feat in enumerate(self.nesting_list):
-			nesting_logits += (x,)
+			nesting_logits += (x[:, :num_feat],)
 		return nesting_logits
 
 def load_from_old_ckpt(model, efficient, nesting_list, extract_ft=False):
@@ -351,8 +351,6 @@ def save_fvecs(filename, vectors):
     
     with open(filename, 'wb') as f:
         # Write the number of vectors (N) and dimensionality (D) as 4-byte integers
-        f.write(struct.pack('I', N))  # N
-        f.write(struct.pack('I', D))  # D
-        
-        # Write the actual vectors (each as a series of 4-byte floats)
-        vectors.tofile(f)
+        for vec in vectors:
+            f.write(struct.pack('i', D))  # D
+            vec.tofile(f)
